@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>August's Studio Pizza</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #080810;
+      --surface:    #111119;
+      --surface2:   #18182a;
+      --surface3:   #22223a;
+      --border:     rgba(255,255,255,0.07);
+      --border2:    rgba(255,255,255,0.12);
+      --accent:     #ff7c2a;
+      --accent-glow:rgba(255,124,42,0.18);
+      --accent2:    #ff4d6a;
+      --gold:       #ffb84d;
+      --green:      #36e4a0;
+      --text:       #eeeef6;
+      --text2:      #9898b4;
+      --text3:      #55556a;
+      --r:          12px;
+      --r-sm:       8px;
+      --trans:      0.18s ease;
+    }
+
+    html { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 15px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -120px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 400px;
+      background: radial-gradient(ellipse, rgba(255,100,30,0.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ─── LANG TOGGLE ────────────────────────── */
+    .lang-toggle {
+      position: fixed; top: 16px; right: 20px; z-index: 100;
+      display: flex;
+      border: 1px solid var(--border2);
+      border-radius: 20px; overflow: hidden;
+      background: var(--surface2);
+    }
+    .lang-btn {
+      padding: 5px 13px; background: none; border: none;
+      color: var(--text2); font-family: inherit; font-size: 0.78rem;
+      font-weight: 600; cursor: pointer; transition: background var(--trans), color var(--trans);
+      letter-spacing: 0.03em;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; }
+    .lang-btn:not(.active):hover { background: var(--surface3); color: var(--text); }
+
+    /* ─── LAYOUT ─────────────────────────────── */
+    .container {
+      max-width: 860px; margin: 0 auto;
+      padding: 0 24px 80px; position: relative; z-index: 1;
+    }
+
+    /* ─── HEADER ─────────────────────────────── */
+    header { text-align: center; padding: 52px 0 40px; }
+    .logo-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; margin-bottom: 10px;
+    }
+    .pizza-spin {
+      font-size: 2.4rem; display: inline-block;
+      animation: pizza-bob 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 16px rgba(255,150,50,0.55));
+    }
+    @keyframes pizza-bob {
+      0%,100% { transform: translateY(0) rotate(-4deg); }
+      50%      { transform: translateY(-7px) rotate(8deg); }
+    }
+    header h1 {
+      font-size: 2rem; font-weight: 700; letter-spacing: -0.5px;
+      background: linear-gradient(100deg, #ff9a5c 0%, #ff4d6a 55%, #ffb84d 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    header p.tagline { color: var(--text2); font-size: 0.95rem; }
+
+    /* ─── DIVIDER ────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border2), transparent);
+      margin: 0 0 32px;
+    }
+
+    /* ─── UPLOAD ZONE ────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--border2); border-radius: var(--r);
+      background: var(--surface); padding: 48px 32px; text-align: center;
+      cursor: pointer;
+      transition: border-color var(--trans), background var(--trans), box-shadow var(--trans);
+      position: relative; overflow: hidden;
+    }
+    .upload-zone::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,124,42,0.06), transparent 60%);
+      opacity: 0; transition: opacity var(--trans);
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent); background: var(--surface2);
+      box-shadow: 0 0 0 3px var(--accent-glow), 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .upload-zone:hover::before, .upload-zone.drag-over::before { opacity: 1; }
+    .upload-zone.drag-over { border-style: solid; }
+    .upload-icon { font-size: 2.8rem; margin-bottom: 14px; }
+    .upload-zone h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; }
+    .upload-zone .sub { color: var(--text2); font-size: 0.9rem; margin-bottom: 14px; }
+    .format-pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .format-pill {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em;
+      padding: 3px 9px; border-radius: 20px;
+      background: var(--surface3); color: var(--text2); border: 1px solid var(--border);
+    }
+
+    /* ─── FILE BAR ───────────────────────────── */
+    .file-bar {
+      display: none; align-items: center; gap: 12px; margin-top: 12px;
+      padding: 12px 16px; background: var(--surface2);
+      border: 1px solid var(--border2); border-radius: var(--r-sm);
+    }
+    .file-bar.visible { display: flex; }
+    .file-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .file-meta { flex: 1; min-width: 0; }
+    .file-name-text {
+      font-weight: 600; font-size: 0.9rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .file-size-text { font-size: 0.78rem; color: var(--text2); margin-top: 1px; }
+    .btn-clear {
+      background: none; border: 1px solid var(--border2); color: var(--text2);
+      border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer;
+      transition: border-color var(--trans), color var(--trans); flex-shrink: 0;
+    }
+    .btn-clear:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* ─── CONTROLS ───────────────────────────── */
+    .controls {
+      display: none; align-items: center; gap: 20px; margin-top: 20px;
+      padding: 22px 24px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--r);
+    }
+    .controls.visible { display: flex; }
+    .n-label-col { flex-shrink: 0; }
+    .n-label-col label {
+      display: block; font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px;
+    }
+    .n-hint { font-size: 0.72rem; color: var(--text3); margin-top: 5px; }
+    .n-stepper { display: flex; align-items: center; }
+    .n-btn {
+      width: 36px; height: 44px; border: 1px solid var(--border2);
+      background: var(--surface2); color: var(--text); font-size: 1.2rem;
+      font-weight: 300; cursor: pointer;
+      transition: background var(--trans), color var(--trans);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .n-btn:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+    .n-btn:last-child  { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+    .n-btn:hover { background: var(--surface3); color: var(--accent); }
+    .n-value-wrap {
+      display: flex; align-items: baseline; gap: 4px; height: 44px; padding: 0 12px;
+      border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2);
+      background: var(--surface2);
+    }
+    #n-input {
+      background: none; border: none; outline: none; color: var(--text);
+      font-family: inherit; font-size: 1.3rem; font-weight: 700;
+      width: 52px; text-align: center; -moz-appearance: textfield;
+    }
+    #n-input::-webkit-outer-spin-button,
+    #n-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .n-unit { font-size: 0.78rem; font-weight: 500; color: var(--text2); }
+    .slice-btn {
+      flex: 1; height: 52px; border: none; border-radius: var(--r-sm);
+      background: linear-gradient(135deg, #ff7c2a 0%, #ff4d6a 100%);
+      color: #fff; font-family: inherit; font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.04em; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: opacity var(--trans), transform var(--trans), box-shadow var(--trans);
+      box-shadow: 0 4px 24px rgba(255,100,42,0.28);
+    }
+    .slice-btn:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 8px 32px rgba(255,100,42,0.4); }
+    .slice-btn:active { transform: translateY(0); }
+    .slice-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* ─── LOADING ────────────────────────────── */
+    #loading-section { display: none; text-align: center; padding: 48px 0; }
+    #loading-section.visible { display: block; }
+    .loading-label { font-size: 0.95rem; color: var(--text2); margin-bottom: 24px; }
+    .loading-label .filename { color: var(--accent); font-weight: 600; }
+    .progress-outer {
+      width: 100%; max-width: 320px; height: 4px;
+      background: var(--surface3); border-radius: 2px;
+      margin: 0 auto 24px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      border-radius: 2px; transition: width 0.15s ease;
+    }
+    .eq-loader { display: flex; justify-content: center; align-items: flex-end; gap: 5px; height: 48px; }
+    .eq-loader-bar {
+      width: 6px; border-radius: 3px;
+      background: linear-gradient(to top, var(--accent), var(--gold));
+      animation: eq-load 0.9s ease-in-out infinite alternate;
+    }
+    .eq-loader-bar:nth-child(1) { animation-delay: 0s;    animation-duration: 0.7s; }
+    .eq-loader-bar:nth-child(2) { animation-delay: 0.1s;  animation-duration: 0.9s; }
+    .eq-loader-bar:nth-child(3) { animation-delay: 0.2s;  animation-duration: 0.65s; }
+    .eq-loader-bar:nth-child(4) { animation-delay: 0.05s; animation-duration: 0.8s; }
+    .eq-loader-bar:nth-child(5) { animation-delay: 0.15s; animation-duration: 0.75s; }
+    .eq-loader-bar:nth-child(6) { animation-delay: 0.25s; animation-duration: 0.95s; }
+    .eq-loader-bar:nth-child(7) { animation-delay: 0.08s; animation-duration: 0.7s; }
+    .eq-loader-bar:nth-child(8) { animation-delay: 0.18s; animation-duration: 0.85s; }
+    @keyframes eq-load {
+      from { height: 6px; opacity: 0.5; }
+      to   { height: 44px; opacity: 1; }
+    }
+    .dots-anim::after {
+      content: ''; animation: dots 1.4s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%  { content: ''; } 25% { content: '.'; }
+      50% { content: '..'; } 75% { content: '...'; }
+    }
+
+    /* ─── RESULTS ────────────────────────────── */
+    #results-section { display: none; }
+    #results-section.visible { display: block; }
+    .results-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+    }
+    .results-stats { display: flex; gap: 18px; flex-wrap: wrap; }
+    .stat-chip { display: flex; flex-direction: column; }
+    .stat-val { font-size: 1.4rem; font-weight: 700; color: var(--text); line-height: 1; }
+    .stat-lbl {
+      font-size: 0.7rem; font-weight: 500; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--text3); margin-top: 3px;
+    }
+    .btn-dl-all {
+      display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+      border-radius: var(--r-sm); background: var(--surface2);
+      border: 1px solid var(--border2); color: var(--text);
+      font-family: inherit; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      transition: background var(--trans), border-color var(--trans), box-shadow var(--trans);
+    }
+    .btn-dl-all:hover {
+      background: var(--surface3); border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow); color: var(--accent);
+    }
+    .btn-dl-all:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+    /* ─── SLICE LIST ─────────────────────────── */
+    .slice-list { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ─── SLICE CARD ─────────────────────────── */
+    .slice-card {
+      display: grid; grid-template-columns: 52px 1fr auto auto;
+      align-items: center; gap: 14px; padding: 12px 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      transition: background var(--trans), border-color var(--trans);
+    }
+    .slice-card:hover { background: var(--surface2); border-color: var(--border2); }
+    .slice-card.is-playing {
+      background: var(--surface2); border-color: rgba(255,124,42,0.3);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    .num-badge { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .num-badge .num-text { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text3); }
+    .num-badge .num-val { font-size: 1.05rem; font-weight: 700; color: var(--text2); }
+    .slice-card.is-playing .num-val { color: var(--accent); }
+    .card-player { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .play-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid var(--border2); background: var(--surface2);
+      color: var(--text); cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--trans), border-color var(--trans), color var(--trans), transform var(--trans);
+    }
+    .play-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.07); }
+    .slice-card.is-playing .play-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .play-btn svg { width: 16px; height: 16px; }
+    .play-btn .icon-pause { display: none; }
+    .slice-card.is-playing .play-btn .icon-play  { display: none; }
+    .slice-card.is-playing .play-btn .icon-pause { display: block; }
+    .player-track-wrap { flex: 1; min-width: 0; }
+    .progress-track {
+      height: 4px; background: var(--surface3); border-radius: 2px;
+      cursor: pointer; overflow: hidden; margin-bottom: 5px;
+    }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      border-radius: 2px; transition: width 0.1s linear;
+    }
+    .player-sub { display: flex; align-items: center; justify-content: space-between; }
+    .time-display { font-size: 0.7rem; font-weight: 500; color: var(--text3); font-variant-numeric: tabular-nums; }
+    .eq-viz { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .eq-b { width: 2px; border-radius: 1px; background: var(--accent); height: 3px; opacity: 0.4; }
+    .slice-card.is-playing .eq-b { opacity: 1; animation: eq-card 0.7s ease-in-out infinite alternate; }
+    .slice-card.is-playing .eq-b:nth-child(1) { animation-duration: 0.6s;  animation-delay: 0s; }
+    .slice-card.is-playing .eq-b:nth-child(2) { animation-duration: 0.8s;  animation-delay: 0.1s; }
+    .slice-card.is-playing .eq-b:nth-child(3) { animation-duration: 0.55s; animation-delay: 0.05s; }
+    .slice-card.is-playing .eq-b:nth-child(4) { animation-duration: 0.75s; animation-delay: 0.15s; }
+    .slice-card.is-playing .eq-b:nth-child(5) { animation-duration: 0.65s; animation-delay: 0.08s; }
+    @keyframes eq-card { from { height: 2px; } to { height: 12px; } }
+    .card-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 56px; }
+    .dur-badge { font-size: 0.78rem; font-weight: 600; color: var(--text2); }
+    .size-badge { font-size: 0.68rem; color: var(--text3); }
+    .dl-btn {
+      width: 34px; height: 34px; border-radius: var(--r-sm);
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text2); display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: background var(--trans), border-color var(--trans), color var(--trans);
+      flex-shrink: 0;
+    }
+    .dl-btn:hover { background: var(--surface3); border-color: var(--green); color: var(--green); }
+
+    /* ─── ERROR TOAST ────────────────────────── */
+    .error-toast {
+      display: none; margin-top: 16px; padding: 13px 18px;
+      background: rgba(255,60,80,0.12); border: 1px solid rgba(255,60,80,0.3);
+      border-radius: var(--r-sm); color: #ff8099; font-size: 0.88rem;
+    }
+    .error-toast.visible { display: block; }
+
+    /* ─── FOOTER ─────────────────────────────── */
+    footer {
+      text-align: center; padding: 32px 0 20px;
+      color: var(--text3); font-size: 0.78rem; border-top: 1px solid var(--border);
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fade-up 0.3s ease forwards; }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.5rem; }
+      .controls { flex-direction: column; align-items: stretch; }
+      .slice-btn { flex: none; }
+      .slice-card { grid-template-columns: 44px 1fr auto; }
+      .card-meta  { display: none; }
+      .results-header { flex-direction: column; align-items: flex-start; }
+      .lang-toggle { top: 10px; right: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lang-toggle">
+    <button class="lang-btn active" data-lang="zh">中文</button>
+    <button class="lang-btn"        data-lang="en">EN</button>
+  </div>
+
+  <div class="container">
+
+    <header>
+      <div class="logo-row">
+        <span class="pizza-spin">🍕</span>
+        <h1>August's Studio Pizza</h1>
+      </div>
+      <p class="tagline" data-i18n="tagline"></p>
+    </header>
+
+    <div class="divider"></div>
+
+    <div id="upload-zone" class="upload-zone" role="button" tabindex="0">
+      <div class="upload-icon">🎵</div>
+      <h2 data-i18n="uploadH2"></h2>
+      <p class="sub" data-i18n="uploadSub"></p>
+      <div class="format-pills">
+        <span class="format-pill">MP3</span><span class="format-pill">WAV</span>
+        <span class="format-pill">FLAC</span><span class="format-pill">OGG</span>
+        <span class="format-pill">M4A</span><span class="format-pill">AAC</span>
+      </div>
+      <input type="file" id="file-input" accept="audio/*" hidden>
+    </div>
+
+    <div id="file-bar" class="file-bar">
+      <span class="file-icon">🎶</span>
+      <div class="file-meta">
+        <div id="file-name-text" class="file-name-text"></div>
+        <div id="file-size-text" class="file-size-text"></div>
+      </div>
+      <button id="clear-btn" class="btn-clear" data-i18n="clearBtn"></button>
+    </div>
+
+    <div id="controls-section" class="controls">
+      <div class="n-label-col">
+        <label for="n-input" data-i18n="nLabel"></label>
+        <div class="n-stepper">
+          <button class="n-btn" id="n-minus">−</button>
+          <div class="n-value-wrap">
+            <input type="number" id="n-input" value="5" min="0.5" max="600" step="1">
+            <span class="n-unit" data-i18n="nUnit"></span>
+          </div>
+          <button class="n-btn" id="n-plus">+</button>
+        </div>
+        <div class="n-hint">
+          <span data-i18n="hintPre"></span><span id="half-display">2.5</span><span data-i18n="hintPost"></span>
+        </div>
+      </div>
+      <button id="slice-btn" class="slice-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11 14H2v2h9v2l3-3-3-3v2zm2-4h9V8h-9V6l-3 3 3 3V10z"/>
+        </svg>
+        <span data-i18n="sliceIt"></span>
+      </button>
+    </div>
+
+    <div id="loading-section">
+      <div class="loading-label">
+        <span data-i18n="processing"></span>&nbsp;<span id="loading-filename" class="filename"></span><span class="dots-anim"></span>
+      </div>
+      <div class="progress-outer"><div id="progress-bar-fill" class="progress-bar-fill"></div></div>
+      <div class="eq-loader">
+        <div class="eq-loader-bar"></div><div class="eq-loader-bar"></div>
+        <div class="eq-loader-bar"></div><div class="eq-loader-bar"></div>
+        <div class="eq-loader-bar"></div><div class="eq-loader-bar"></div>
+        <div class="eq-loader-bar"></div><div class="eq-loader-bar"></div>
+      </div>
+    </div>
+
+    <div id="error-toast" class="error-toast"></div>
+
+    <div id="results-section">
+      <div class="results-header fade-in">
+        <div class="results-stats">
+          <div class="stat-chip">
+            <span id="stat-count" class="stat-val">—</span>
+            <span class="stat-lbl" data-i18n="statSlices"></span>
+          </div>
+          <div class="stat-chip">
+            <span id="stat-n" class="stat-val">—</span>
+            <span class="stat-lbl" data-i18n="statNLbl"></span>
+          </div>
+          <div class="stat-chip">
+            <span id="stat-total" class="stat-val">—</span>
+            <span class="stat-lbl" data-i18n="statTotal"></span>
+          </div>
+          <div class="stat-chip">
+            <span id="stat-src" class="stat-val" style="font-size:0.85rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+            <span class="stat-lbl" data-i18n="statSrc"></span>
+          </div>
+        </div>
+        <button id="dl-all-btn" class="btn-dl-all" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-4 9l-4 4-4-4h3V11h2v4h3z"/>
+          </svg>
+          <span data-i18n="dlAll"></span>
+        </button>
+      </div>
+      <div id="slice-list" class="slice-list"></div>
+    </div>
+
+  </div>
+
+  <footer><p data-i18n="footer"></p></footer>
+
+  <script>
+    // ── Translations ─────────────────────────────────
+    const T = {
+      en: {
+        tagline: "Drop your track. Set the timer. Get fresh slices.",
+        uploadH2: "Drop your track here", uploadSub: "or click to browse",
+        clearBtn: "✕ Clear", nLabel: "Slice Duration", nUnit: "sec",
+        hintPre: "Tail < ", hintPost: "s will be trimmed",
+        sliceIt: "Slice It", processing: "Processing",
+        statSlices: "Slices", statNLbl: "Sec / Slice",
+        statTotal: "Total Duration", statSrc: "Source",
+        dlAll: "Download All (.zip)",
+        footer: "August's Studio Pizza — Fresh cuts, every time. 🍕",
+        sliceLbl: "SLICE",
+        errRange: "Slice duration must be between 0.5 and 600 seconds.",
+        errDecode: "Cannot decode audio. Try a different file.",
+        errZip: "Failed to create ZIP.",
+      },
+      zh: {
+        tagline: "上传音频，设置时长，获取新鲜切片。",
+        uploadH2: "把音频拖到这里", uploadSub: "或点击选择文件",
+        clearBtn: "✕ 清除", nLabel: "切片时长", nUnit: "秒",
+        hintPre: "尾部不足 ", hintPost: " 秒将被丢弃",
+        sliceIt: "开始切片", processing: "正在处理",
+        statSlices: "切片数", statNLbl: "秒 / 片",
+        statTotal: "总时长", statSrc: "源文件",
+        dlAll: "全部下载 (.zip)",
+        footer: "August's Studio Pizza — 新鲜出炉，每一刀。🍕",
+        sliceLbl: "片段",
+        errRange: "切片时长须在 0.5 到 600 秒之间。",
+        errDecode: "无法解码音频，请尝试其他文件。",
+        errZip: "创建 ZIP 失败。",
+      }
+    };
+
+    let lang = localStorage.getItem('sp-lang') || 'zh';
+
+    function setLang(l) {
+      lang = l;
+      localStorage.setItem('sp-lang', l);
+      document.documentElement.lang = l === 'zh' ? 'zh-CN' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.dataset.i18n;
+        if (T[l][k] !== undefined) el.textContent = T[l][k];
+      });
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === l));
+      document.querySelectorAll('.num-text').forEach(el => el.textContent = T[l].sliceLbl);
+    }
+
+    document.querySelectorAll('.lang-btn').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+    setLang(lang);
+
+    // ── State ────────────────────────────────────────
+    let currentFile      = null;
+    let currentlyPlaying = null;
+    let sliceBlobs       = [];  // { blob, url } per slice
+
+    // ── DOM refs ─────────────────────────────────────
+    const uploadZone      = document.getElementById('upload-zone');
+    const fileInput       = document.getElementById('file-input');
+    const fileBar         = document.getElementById('file-bar');
+    const fileNameText    = document.getElementById('file-name-text');
+    const fileSizeText    = document.getElementById('file-size-text');
+    const clearBtn        = document.getElementById('clear-btn');
+    const controlsSection = document.getElementById('controls-section');
+    const nInput          = document.getElementById('n-input');
+    const nMinus          = document.getElementById('n-minus');
+    const nPlus           = document.getElementById('n-plus');
+    const halfDisplay     = document.getElementById('half-display');
+    const sliceBtn        = document.getElementById('slice-btn');
+    const loadingSection  = document.getElementById('loading-section');
+    const loadingFilename = document.getElementById('loading-filename');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const errorToast      = document.getElementById('error-toast');
+    const resultsSection  = document.getElementById('results-section');
+    const sliceList       = document.getElementById('slice-list');
+    const dlAllBtn        = document.getElementById('dl-all-btn');
+    const statCount       = document.getElementById('stat-count');
+    const statN           = document.getElementById('stat-n');
+    const statTotal       = document.getElementById('stat-total');
+    const statSrc         = document.getElementById('stat-src');
+
+    // ── Upload zone ──────────────────────────────────
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault(); uploadZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+    clearBtn.addEventListener('click', resetToUpload);
+
+    function handleFile(file) {
+      currentFile = file;
+      fileNameText.textContent = file.name;
+      fileSizeText.textContent = formatSize(file.size);
+      fileBar.classList.add('visible');
+      controlsSection.classList.add('visible');
+      hideError(); hideResults();
+    }
+
+    function resetToUpload() {
+      currentFile = null; fileInput.value = '';
+      fileBar.classList.remove('visible');
+      controlsSection.classList.remove('visible');
+      hideError(); hideResults(); stopAllAudio();
+      revokeBlobs();
+    }
+
+    // ── n-stepper ────────────────────────────────────
+    nInput.addEventListener('input', updateHalf);
+    nMinus.addEventListener('click', () => { nInput.value = Math.max(0.5, (parseFloat(nInput.value) || 5) - 1); updateHalf(); });
+    nPlus.addEventListener('click',  () => { nInput.value = Math.min(600, (parseFloat(nInput.value) || 5) + 1); updateHalf(); });
+
+    function updateHalf() {
+      halfDisplay.textContent = ((parseFloat(nInput.value) || 5) / 2).toFixed(1);
+    }
+    updateHalf();
+
+    // ── WAV encoding ─────────────────────────────────
+    function audioBufferToWavBlob(buffer) {
+      const ch  = buffer.numberOfChannels;
+      const sr  = buffer.sampleRate;
+      const len = buffer.length;
+      const ab  = new ArrayBuffer(44 + len * ch * 2);
+      const v   = new DataView(ab);
+      const ws  = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+
+      ws(0,  'RIFF'); v.setUint32(4,  ab.byteLength - 8, true);
+      ws(8,  'WAVE'); ws(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+      v.setUint16(22, ch, true); v.setUint32(24, sr, true);
+      v.setUint32(28, sr * ch * 2, true); v.setUint16(32, ch * 2, true);
+      v.setUint16(34, 16, true); ws(36, 'data');
+      v.setUint32(40, len * ch * 2, true);
+
+      let off = 44;
+      for (let i = 0; i < len; i++) {
+        for (let c = 0; c < ch; c++) {
+          const s = Math.max(-1, Math.min(1, buffer.getChannelData(c)[i]));
+          v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+          off += 2;
+        }
+      }
+      return new Blob([ab], { type: 'audio/wav' });
+    }
+
+    // Slice AudioBuffer by sample indices
+    function sliceAudioBuffer(src, start, end) {
+      const len = end - start;
+      const out = new AudioBuffer({ numberOfChannels: src.numberOfChannels, length: len, sampleRate: src.sampleRate });
+      for (let c = 0; c < src.numberOfChannels; c++) {
+        out.copyToChannel(src.getChannelData(c).subarray(start, end), c, 0);
+      }
+      return out;
+    }
+
+    // Compute slice boundaries (returns array of {start, end} in samples)
+    function computeSlices(audioBuffer, n) {
+      const sr    = audioBuffer.sampleRate;
+      const total = audioBuffer.length;
+      const sw    = Math.floor(n * sr);
+      const half  = sw / 2;
+      const defs  = [];
+      let pos = 0;
+
+      while (pos < total) {
+        const rem = total - pos;
+        let end;
+        if (rem >= sw)   end = pos + sw;
+        else if (rem > half) end = pos + rem;
+        else break;
+        defs.push({ start: pos, end });
+        pos = end;
+      }
+      return defs;
+    }
+
+    // ── Slice action ─────────────────────────────────
+    sliceBtn.addEventListener('click', doSlice);
+
+    async function doSlice() {
+      if (!currentFile) return;
+      const n = parseFloat(nInput.value);
+      if (isNaN(n) || n < 0.5 || n > 600) { showError(T[lang].errRange); return; }
+
+      sliceBtn.disabled = true;
+      controlsSection.style.opacity = '0.5';
+      loadingFilename.textContent = `"${currentFile.name}"`;
+      loadingSection.classList.add('visible');
+      progressBarFill.style.width = '0%';
+      hideError(); hideResults(); stopAllAudio(); revokeBlobs();
+
+      try {
+        // 1. Decode
+        const arrayBuf   = await currentFile.arrayBuffer();
+        const audioCtx   = new AudioContext();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuf);
+        await audioCtx.close();
+
+        // 2. Compute slices
+        const defs = computeSlices(audioBuffer, n);
+        const totalDur = audioBuffer.duration;
+
+        // 3. Init results UI
+        statCount.textContent = defs.length;
+        statN.textContent     = lang === 'zh' ? `${n}秒` : `${n}s`;
+        statTotal.textContent = formatDuration(totalDur);
+        statSrc.textContent   = currentFile.name;
+        statSrc.title         = currentFile.name;
+        sliceList.innerHTML   = '';
+        sliceBlobs            = [];
+        dlAllBtn.disabled     = true;
+        resultsSection.classList.add('visible');
+
+        // 4. Process slices progressively
+        for (let i = 0; i < defs.length; i++) {
+          const { start, end } = defs[i];
+          const sliceBuf = sliceAudioBuffer(audioBuffer, start, end);
+          const blob     = audioBufferToWavBlob(sliceBuf);
+          const url      = URL.createObjectURL(blob);
+          sliceBlobs.push({ blob, url, name: `slice_${String(i + 1).padStart(4, '0')}.wav` });
+
+          sliceList.appendChild(buildCard(i + 1, sliceBuf.duration, blob.size, url, i * 15));
+
+          // Update progress bar and yield to UI thread
+          progressBarFill.style.width = `${((i + 1) / defs.length) * 100}%`;
+          await new Promise(r => setTimeout(r, 0));
+        }
+
+        dlAllBtn.disabled = false;
+
+      } catch (err) {
+        showError(err.message || T[lang].errDecode);
+      } finally {
+        sliceBtn.disabled = false;
+        controlsSection.style.opacity = '';
+        loadingSection.classList.remove('visible');
+      }
+    }
+
+    // ── Download All (JSZip) ──────────────────────────
+    dlAllBtn.addEventListener('click', async () => {
+      if (!sliceBlobs.length) return;
+      dlAllBtn.disabled = true;
+      try {
+        const zip = new JSZip();
+        sliceBlobs.forEach(({ blob, name }) => zip.file(name, blob));
+        const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 1 } });
+        triggerDownload(URL.createObjectURL(content), 'studio_pizza_slices.zip');
+      } catch {
+        showError(T[lang].errZip);
+      } finally {
+        dlAllBtn.disabled = false;
+      }
+    });
+
+    function triggerDownload(url, filename) {
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    // ── Build card ────────────────────────────────────
+    function buildCard(num, duration, byteSize, blobUrl, delayMs) {
+      const card = document.createElement('div');
+      card.className = 'slice-card fade-in';
+      card.style.animationDelay = `${Math.min(delayMs, 400)}ms`;
+
+      card.innerHTML = `
+        <div class="num-badge">
+          <span class="num-text">${T[lang].sliceLbl}</span>
+          <span class="num-val">${String(num).padStart(3, '0')}</span>
+        </div>
+        <div class="card-player">
+          <button class="play-btn">
+            <svg class="icon-play"  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <div class="player-track-wrap">
+            <div class="progress-track"><div class="progress-fill"></div></div>
+            <div class="player-sub">
+              <span class="time-display">0:00 / ${formatTime(duration)}</span>
+              <div class="eq-viz">
+                <div class="eq-b"></div><div class="eq-b"></div><div class="eq-b"></div>
+                <div class="eq-b"></div><div class="eq-b"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-meta">
+          <span class="dur-badge">${duration.toFixed(2)}s</span>
+          <span class="size-badge">${formatSize(byteSize)}</span>
+        </div>
+        <a class="dl-btn" href="${blobUrl}" download="slice_${String(num).padStart(4,'0')}.wav">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        </a>
+      `;
+
+      const audio         = new Audio(blobUrl);
+      audio.preload       = 'none';
+      const playBtn       = card.querySelector('.play-btn');
+      const progressFill  = card.querySelector('.progress-fill');
+      const progressTrack = card.querySelector('.progress-track');
+      const timeDisplay   = card.querySelector('.time-display');
+
+      playBtn.addEventListener('click', () => {
+        if (audio.paused) {
+          if (currentlyPlaying) {
+            currentlyPlaying.audio.pause();
+            currentlyPlaying.card.classList.remove('is-playing');
+          }
+          audio.play().catch(() => {});
+          currentlyPlaying = { audio, card };
+          card.classList.add('is-playing');
+        } else {
+          audio.pause(); currentlyPlaying = null;
+          card.classList.remove('is-playing');
+        }
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        const dur = isNaN(audio.duration) ? duration : audio.duration;
+        if (dur > 0) {
+          progressFill.style.width = `${(audio.currentTime / dur) * 100}%`;
+          timeDisplay.textContent  = `${formatTime(audio.currentTime)} / ${formatTime(dur)}`;
+        }
+      });
+
+      audio.addEventListener('ended', () => {
+        card.classList.remove('is-playing');
+        progressFill.style.width = '0%';
+        timeDisplay.textContent  = `0:00 / ${formatTime(duration)}`;
+        if (currentlyPlaying?.audio === audio) currentlyPlaying = null;
+      });
+
+      progressTrack.addEventListener('click', e => {
+        if (!isNaN(audio.duration) && audio.duration > 0) {
+          const rect = progressTrack.getBoundingClientRect();
+          audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+        }
+      });
+
+      return card;
+    }
+
+    // ── Helpers ───────────────────────────────────────
+    function stopAllAudio() {
+      if (currentlyPlaying) {
+        currentlyPlaying.audio.pause();
+        currentlyPlaying.card.classList.remove('is-playing');
+        currentlyPlaying = null;
+      }
+    }
+
+    function revokeBlobs() {
+      sliceBlobs.forEach(({ url }) => URL.revokeObjectURL(url));
+      sliceBlobs = [];
+    }
+
+    function hideResults() {
+      resultsSection.classList.remove('visible');
+      sliceList.innerHTML = '';
+      dlAllBtn.disabled = true;
+    }
+
+    function showError(msg) { errorToast.textContent = `⚠ ${msg}`; errorToast.classList.add('visible'); }
+    function hideError()    { errorToast.classList.remove('visible'); }
+
+    function formatTime(s) {
+      const sec = Math.floor(+s);
+      return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+    }
+
+    function formatDuration(s) {
+      const sec = Math.round(+s);
+      if (lang === 'zh') return sec < 60 ? `${sec}秒` : `${Math.floor(sec/60)}分${sec%60}秒`;
+      return sec < 60 ? `${sec}s` : `${Math.floor(sec/60)}m ${sec%60}s`;
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024)        return `${bytes} B`;
+      if (bytes < 1048576)     return `${(bytes/1024).toFixed(0)} KB`;
+      return `${(bytes/1048576).toFixed(1)} MB`;
+    }
+  </script>
+</body>
+</html>

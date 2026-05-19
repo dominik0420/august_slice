@@ -1,0 +1,6 @@
+flask>=3.0.0
+pydub>=0.25.1
+# ffmpeg must be installed separately and on PATH for MP3 support:
+#   Windows: choco install ffmpeg  OR  scoop install ffmpeg
+#   macOS:   brew install ffmpeg
+#   Linux:   sudo apt install ffmpeg
